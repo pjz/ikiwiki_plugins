@@ -11,6 +11,7 @@ sub import {
 	hook(type => "getopt", id => "tag", call => \&getopt);
 	hook(type => "getsetup", id => "tag", call => \&getsetup);
 	hook(type => "preprocess", id => "tag", call => \&preprocess_tag, scan => 1);
+	hook(type => "preprocess", id => "tagged", call => \&preprocess_tagged);
 	hook(type => "preprocess", id => "taglink", call => \&preprocess_taglink, scan => 1);
 	hook(type => "pagetemplate", id => "tag", call => \&pagetemplate);
 
@@ -179,6 +180,32 @@ sub preprocess_taglink (@) {
 	grep {
 		$_ ne 'page' && $_ ne 'destpage' && $_ ne 'preview'
 	} keys %params);
+}
+
+sub preprocess_tagged (@) {
+	my %params=@_;
+	my @tags = grep {
+		$_ ne 'page' && $_ ne 'destpage' && $_ ne 'preview'
+	} keys %params;
+	my @pages = ();
+	foreach my $page (keys %links) {
+		next if $page eq $params{'page'};
+		my @pagelinks = @{$links{$page}};
+		foreach my $tag (@tags) {
+			foreach my $pagelink (@pagelinks) {
+				if ($pagelink eq $tag) {
+					#push(@pages, $page);
+					push(@pages, htmllink($params{'page'}, $params{'page'}, $page));
+				}
+			}
+		}
+	}
+	my $result = join(" ", @pages);
+	if (defined $result and length($result)) {
+		return $result;
+	} else {
+		return "No pages tagged '".join(" ", @tags)."'.";
+	}
 }
 
 sub pagetemplate (@) {
